@@ -15,13 +15,18 @@ function wait(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function filterUpcomingEvents(events: Array<Awaited<ReturnType<typeof fetchEventsForVenue>>[number]>) {
+function filterUpcomingEvents(
+  events: Array<Awaited<ReturnType<typeof fetchEventsForVenue>>[number] | null>
+) {
   const now = new Date();
-  return events.filter((event) => {
-    const time = event.localTime ?? "23:59:59";
-    const eventDate = new Date(`${event.localDate}T${time}`);
-    return eventDate >= now;
-  });
+
+  return events
+    .filter((event): event is NonNullable<typeof event> => !!event)
+    .filter((event) => {
+      const time = event.localTime ?? "23:59:59";
+      const eventDate = new Date(`${event.localDate}T${time}`);
+      return eventDate >= now;
+    });
 }
 
 export default async function HomePage() {
