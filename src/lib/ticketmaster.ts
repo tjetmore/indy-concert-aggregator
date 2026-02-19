@@ -118,7 +118,7 @@ export async function fetchEventsForVenue(venueKey: string, venueId: string) {
         url: event.url
       } satisfies EventItem;
     })
-    .filter((event): event is EventItem => Boolean(event));
+    .filter(Boolean);
 }
 
 export function sortEventsAscending(events: EventItem[]) {
