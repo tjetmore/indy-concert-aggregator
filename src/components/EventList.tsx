@@ -55,6 +55,7 @@ type VenueOption = { key: string; label: string };
 type DateRangeFilter = "all" | "weekend" | "30days";
 type ViewMode = "all" | "saved";
 const SAVED_EVENTS_STORAGE_KEY = "indyConcertSavedEvents";
+const LAST_VISIT_STORAGE_KEY = "indyConcertLastVisitAt";
 
 function getEventDateTime(event: EventItem) {
   return new Date(`${event.localDate}T${event.localTime ?? "23:59:59"}`);
@@ -91,6 +92,22 @@ function matchesDateRange(event: EventItem, filter: DateRangeFilter) {
   return eventDate >= start && eventDate <= end;
 }
 
+function getEventAddedTime(event: EventItem) {
+  const published = event.publicVisibilityStartDateTime
+    ? Date.parse(event.publicVisibilityStartDateTime)
+    : NaN;
+  const firstSeen = event.firstSeenAt ? Date.parse(event.firstSeenAt) : NaN;
+
+  if (Number.isFinite(published)) return published;
+  if (Number.isFinite(firstSeen)) return firstSeen;
+  return null;
+}
+
+function isNewSinceVisit(event: EventItem, previousVisitAt: number | null) {
+  const addedAt = getEventAddedTime(event);
+  return previousVisitAt !== null && addedAt !== null && addedAt > previousVisitAt;
+}
+
 export default function EventList({
   events,
   venues
@@ -102,10 +119,12 @@ export default function EventList({
   const [query, setQuery] = useState("");
   const [collapsedByMonth, setCollapsedByMonth] = useState<Record<string, boolean>>({});
   const [onlyNewThisWeek, setOnlyNewThisWeek] = useState(false);
+  const [onlyNewSinceLastVisit, setOnlyNewSinceLastVisit] = useState(false);
   const [dateRange, setDateRange] = useState<DateRangeFilter>("all");
   const [viewMode, setViewMode] = useState<ViewMode>("all");
   const [savedEventIds, setSavedEventIds] = useState<string[]>([]);
   const [sharedEventIds, setSharedEventIds] = useState<string[]>([]);
+  const [previousVisitAt, setPreviousVisitAt] = useState<number | null>(null);
   const [shareStatus, setShareStatus] = useState("");
 
   useEffect(() => {
@@ -114,6 +133,17 @@ export default function EventList({
       if (raw) setSavedEventIds(JSON.parse(raw) as string[]);
     } catch {
       setSavedEventIds([]);
+    }
+
+    try {
+      const rawLastVisit = window.localStorage.getItem(LAST_VISIT_STORAGE_KEY);
+      const parsedLastVisit = rawLastVisit ? Date.parse(rawLastVisit) : NaN;
+      if (Number.isFinite(parsedLastVisit)) {
+        setPreviousVisitAt(parsedLastVisit);
+      }
+      window.localStorage.setItem(LAST_VISIT_STORAGE_KEY, new Date().toISOString());
+    } catch {
+      setPreviousVisitAt(null);
     }
 
     const params = new URLSearchParams(window.location.search);
@@ -220,19 +250,34 @@ export default function EventList({
 
       if (onlyNewThisWeek) {
         const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
-        const published = event.publicVisibilityStartDateTime
-          ? Date.parse(event.publicVisibilityStartDateTime)
-          : NaN;
-        const firstSeen = event.firstSeenAt ? Date.parse(event.firstSeenAt) : NaN;
-        const effectiveTime = Number.isFinite(published) ? published : firstSeen;
-        if (!Number.isFinite(effectiveTime) || effectiveTime < cutoff) return false;
+        const addedAt = getEventAddedTime(event);
+        if (addedAt === null || addedAt < cutoff) return false;
+      }
+
+      if (onlyNewSinceLastVisit && !isNewSinceVisit(event, previousVisitAt)) {
+        return false;
       }
 
       return matchesFilter && matchesSaved && matchesQuery && matchesDate;
     });
-  }, [events, filter, query, onlyNewThisWeek, dateRange, viewMode, savedEventIds, sharedEventIds]);
+  }, [
+    events,
+    filter,
+    query,
+    onlyNewThisWeek,
+    onlyNewSinceLastVisit,
+    previousVisitAt,
+    dateRange,
+    viewMode,
+    savedEventIds,
+    sharedEventIds
+  ]);
 
   const grouped = useMemo(() => groupEventsByMonth(filtered), [filtered]);
+  const newSinceLastVisitCount = useMemo(
+    () => events.filter((event) => isNewSinceVisit(event, previousVisitAt)).length,
+    [events, previousVisitAt]
+  );
   const filterOptions = useMemo(
     () => [{ key: "All", label: "All" }, ...venues],
     [venues]
@@ -358,9 +403,30 @@ export default function EventList({
           </label>
         </div>
       </div>
+      <div className="flex flex-wrap items-center gap-3 rounded-lg border border-slate-800 bg-slate-950/35 px-4 py-3 text-sm text-slate-400">
+        <span>
+          {previousVisitAt === null
+            ? "New since last visit will start tracking after this visit."
+            : `${newSinceLastVisitCount} new since your last visit`}
+        </span>
+        <button
+          type="button"
+          className="filter-pill"
+          data-active={onlyNewSinceLastVisit}
+          disabled={previousVisitAt === null || newSinceLastVisitCount === 0}
+          onClick={() => setOnlyNewSinceLastVisit((current) => !current)}
+        >
+          New since last visit
+        </button>
+      </div>
       <div className="flex items-center justify-between text-sm text-slate-400">
         <span>{filtered.length} of {events.length} events shown</span>
-        {query || filter !== "All" || onlyNewThisWeek || dateRange !== "all" || viewMode !== "all" ? (
+        {query ||
+        filter !== "All" ||
+        onlyNewThisWeek ||
+        onlyNewSinceLastVisit ||
+        dateRange !== "all" ||
+        viewMode !== "all" ? (
           <button
             type="button"
             className="font-semibold text-amber-300 transition hover:text-amber-200"
@@ -368,6 +434,7 @@ export default function EventList({
               setFilter("All");
               setQuery("");
               setOnlyNewThisWeek(false);
+              setOnlyNewSinceLastVisit(false);
               setDateRange("all");
               setViewMode("all");
             }}
@@ -405,12 +472,15 @@ export default function EventList({
                     {group.events.map((event) => {
                       const isSaved = savedEventIds.includes(event.id);
                       const isShared = sharedEventIds.includes(event.id);
+                      const isNewSinceLastVisit = isNewSinceVisit(event, previousVisitAt);
                       return (
                       <div
                         key={event.id}
                         className={`rounded-lg border p-4 transition ${
                           isSaved
                             ? "border-cyan-300/40 bg-cyan-300/10 hover:border-cyan-200/70"
+                            : isNewSinceLastVisit
+                              ? "border-amber-300/45 bg-amber-300/10 hover:border-amber-200/70"
                             : "border-slate-800 bg-slate-950/55 hover:border-amber-300/55 hover:bg-slate-900/80"
                         }`}
                       >
@@ -433,6 +503,14 @@ export default function EventList({
                                 <>
                                   <span aria-hidden="true">/</span>
                                   <span className="font-semibold text-cyan-200">Saved</span>
+                                </>
+                              ) : null}
+                              {isNewSinceLastVisit ? (
+                                <>
+                                  <span aria-hidden="true">/</span>
+                                  <span className="font-semibold text-amber-200">
+                                    New since last visit
+                                  </span>
                                 </>
                               ) : null}
                             </div>
