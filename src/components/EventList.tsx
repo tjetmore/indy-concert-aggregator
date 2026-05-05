@@ -24,7 +24,7 @@ function formatTime(localDate: string, localTime?: string) {
 
 type VenueOption = { key: string; label: string };
 type DateRangeFilter = "all" | "weekend" | "30days";
-type ViewMode = "all" | "saved";
+type ViewMode = "all" | "saved" | "dismissed";
 type GroupMode = "date" | "venue";
 type EventGroup = { key: string; label: string; events: EventItem[] };
 
@@ -82,6 +82,7 @@ function groupEventsByVenue(events: EventItem[], venues: VenueOption[]): EventGr
 }
 
 const SAVED_EVENTS_STORAGE_KEY = "indyConcertSavedEvents";
+const DISMISSED_EVENTS_STORAGE_KEY = "indyConcertDismissedEvents";
 const LAST_VISIT_STORAGE_KEY = "indyConcertLastVisitAt";
 
 function getEventDateTime(event: EventItem) {
@@ -151,6 +152,7 @@ export default function EventList({
   const [viewMode, setViewMode] = useState<ViewMode>("all");
   const [groupMode, setGroupMode] = useState<GroupMode>("date");
   const [savedEventIds, setSavedEventIds] = useState<string[]>([]);
+  const [dismissedEventIds, setDismissedEventIds] = useState<string[]>([]);
   const [sharedEventIds, setSharedEventIds] = useState<string[]>([]);
   const [previousVisitAt, setPreviousVisitAt] = useState<number | null>(null);
   const [shareStatus, setShareStatus] = useState("");
@@ -161,6 +163,13 @@ export default function EventList({
       if (raw) setSavedEventIds(JSON.parse(raw) as string[]);
     } catch {
       setSavedEventIds([]);
+    }
+
+    try {
+      const rawDismissed = window.localStorage.getItem(DISMISSED_EVENTS_STORAGE_KEY);
+      if (rawDismissed) setDismissedEventIds(JSON.parse(rawDismissed) as string[]);
+    } catch {
+      setDismissedEventIds([]);
     }
 
     try {
@@ -207,12 +216,42 @@ export default function EventList({
     window.localStorage.setItem(SAVED_EVENTS_STORAGE_KEY, JSON.stringify(next));
   }
 
+  function updateDismissedEventIds(next: string[]) {
+    setDismissedEventIds(next);
+    window.localStorage.setItem(DISMISSED_EVENTS_STORAGE_KEY, JSON.stringify(next));
+  }
+
   function toggleSavedEvent(eventId: string) {
+    if (dismissedEventIds.includes(eventId)) {
+      updateDismissedEventIds(dismissedEventIds.filter((id) => id !== eventId));
+    }
     updateSavedEventIds(
       savedEventIds.includes(eventId)
         ? savedEventIds.filter((id) => id !== eventId)
         : [...savedEventIds, eventId]
     );
+  }
+
+  function dismissEvent(eventId: string) {
+    updateDismissedEventIds(
+      dismissedEventIds.includes(eventId)
+        ? dismissedEventIds
+        : [...dismissedEventIds, eventId]
+    );
+    if (savedEventIds.includes(eventId)) {
+      updateSavedEventIds(savedEventIds.filter((id) => id !== eventId));
+    }
+  }
+
+  function restoreEvent(eventId: string) {
+    updateDismissedEventIds(dismissedEventIds.filter((id) => id !== eventId));
+  }
+
+  function clearDismissedEvents() {
+    updateDismissedEventIds([]);
+    if (viewMode === "dismissed") {
+      setViewMode("all");
+    }
   }
 
   async function parseJsonResponse(response: Response) {
@@ -281,7 +320,12 @@ export default function EventList({
     return events.filter((event) => {
       const matchesFilter = filter === "All" || event.venueKey === filter;
       const activeSavedIds = sharedEventIds.length ? sharedEventIds : savedEventIds;
-      const matchesSaved = viewMode === "all" || activeSavedIds.includes(event.id);
+      const isDismissed = dismissedEventIds.includes(event.id);
+      const matchesView =
+        viewMode === "dismissed"
+          ? isDismissed
+          : (viewMode === "all" || activeSavedIds.includes(event.id)) &&
+            (!isDismissed || sharedEventIds.length > 0);
       const matchesQuery = normalizedQuery.length
         ? event.name.toLowerCase().includes(normalizedQuery)
         : true;
@@ -297,7 +341,7 @@ export default function EventList({
         return false;
       }
 
-      return matchesFilter && matchesSaved && matchesQuery && matchesDate;
+      return matchesFilter && matchesView && matchesQuery && matchesDate;
     });
   }, [
     events,
@@ -309,6 +353,7 @@ export default function EventList({
     dateRange,
     viewMode,
     savedEventIds,
+    dismissedEventIds,
     sharedEventIds
   ]);
 
@@ -356,6 +401,16 @@ export default function EventList({
             ? `Shared list (${sharedEventsInFeedCount})`
             : `Saved shows (${savedEventIds.length})`}
         </button>
+        {!isViewingSharedList && dismissedEventIds.length > 0 ? (
+          <button
+            type="button"
+            className="filter-pill"
+            data-active={viewMode === "dismissed"}
+            onClick={() => setViewMode("dismissed")}
+          >
+            Hidden shows ({dismissedEventIds.length})
+          </button>
+        ) : null}
         {!isViewingSharedList ? (
           <button
             type="button"
@@ -374,6 +429,16 @@ export default function EventList({
             onClick={clearSavedEvents}
           >
             Clear saved
+          </button>
+        ) : null}
+        {!isViewingSharedList && dismissedEventIds.length > 0 ? (
+          <button
+            type="button"
+            className="filter-pill"
+            data-active="false"
+            onClick={clearDismissedEvents}
+          >
+            Clear hidden
           </button>
         ) : null}
       </div>
@@ -560,12 +625,15 @@ export default function EventList({
                     {group.events.map((event) => {
                       const isSaved = savedEventIds.includes(event.id);
                       const isShared = sharedEventIds.includes(event.id);
+                      const isDismissed = dismissedEventIds.includes(event.id);
                       const isNewSinceLastVisit = isNewSinceVisit(event, previousVisitAt);
                       return (
                       <div
                         key={event.id}
                         className={`rounded-lg border p-4 transition ${
-                          isSaved
+                          isDismissed && viewMode === "dismissed"
+                            ? "border-slate-700 bg-slate-900/35 opacity-75 hover:opacity-100"
+                            : isSaved
                             ? "border-cyan-300/40 bg-cyan-300/10 hover:border-cyan-200/70"
                             : isNewSinceLastVisit
                               ? "border-amber-300/45 bg-amber-300/10 hover:border-amber-200/70"
@@ -601,20 +669,49 @@ export default function EventList({
                                   </span>
                                 </>
                               ) : null}
+                              {isDismissed ? (
+                                <>
+                                  <span aria-hidden="true">/</span>
+                                  <span className="font-semibold text-slate-300">
+                                    Hidden
+                                  </span>
+                                </>
+                              ) : null}
                             </div>
                           </div>
                           <div className="flex flex-wrap gap-2 md:justify-end">
-                            <button
-                              type="button"
-                              onClick={() => toggleSavedEvent(event.id)}
-                              className={`rounded-full border px-3 py-2 text-sm font-semibold transition ${
-                                isSaved
-                                  ? "border-cyan-200 bg-cyan-300/15 text-cyan-100"
-                                  : "border-slate-700 text-slate-300 hover:border-cyan-300/60 hover:text-cyan-100"
-                              }`}
-                            >
-                              {isSaved ? "Saved" : isShared ? "Save to mine" : "Save"}
-                            </button>
+                            {isDismissed && viewMode === "dismissed" ? (
+                              <button
+                                type="button"
+                                onClick={() => restoreEvent(event.id)}
+                                className="rounded-full border border-cyan-300/50 px-3 py-2 text-sm font-semibold text-cyan-100 transition hover:border-cyan-200 hover:text-white"
+                              >
+                                Restore
+                              </button>
+                            ) : (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => toggleSavedEvent(event.id)}
+                                  className={`rounded-full border px-3 py-2 text-sm font-semibold transition ${
+                                    isSaved
+                                      ? "border-cyan-200 bg-cyan-300/15 text-cyan-100"
+                                      : "border-slate-700 text-slate-300 hover:border-cyan-300/60 hover:text-cyan-100"
+                                  }`}
+                                >
+                                  {isSaved ? "Saved" : isShared ? "Save to mine" : "Save"}
+                                </button>
+                                {!isViewingSharedList ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => dismissEvent(event.id)}
+                                    className="rounded-full border border-slate-700 px-3 py-2 text-sm font-semibold text-slate-400 transition hover:border-slate-500 hover:text-slate-200"
+                                  >
+                                    Hide
+                                  </button>
+                                ) : null}
+                              </>
+                            )}
                             <a
                               href={event.url}
                               target="_blank"
