@@ -5,7 +5,8 @@ import type { EventItem } from "@/lib/ticketmaster";
 const HIFI_EVENTS_URL = "https://hifiindy.com/events/";
 const REVALIDATE_SECONDS = 900;
 const MAX_PAGES = 15;
-const DETAIL_CONCURRENCY = 8;
+const DETAIL_CONCURRENCY = 20;
+const DETAIL_TIMEOUT_MS = 2500;
 let hasLoggedDebug = false;
 const SNAPSHOT_PATH = "/tmp/hifi-events.html";
 const USE_SNAPSHOT = process.env.HIFI_DEBUG_SNAPSHOT === "1";
@@ -147,11 +148,16 @@ function parseEventTimeFromDetailHtml(html: string) {
 }
 
 async function fetchEventTime(url: string) {
-  const response = await fetch(url, {
-    next: { revalidate: REVALIDATE_SECONDS }
-  });
-  if (!response.ok) return undefined;
-  return parseEventTimeFromDetailHtml(await response.text());
+  try {
+    const response = await fetch(url, {
+      next: { revalidate: REVALIDATE_SECONDS },
+      signal: AbortSignal.timeout(DETAIL_TIMEOUT_MS)
+    });
+    if (!response.ok) return undefined;
+    return parseEventTimeFromDetailHtml(await response.text());
+  } catch {
+    return undefined;
+  }
 }
 
 async function mapWithConcurrency<T, U>(

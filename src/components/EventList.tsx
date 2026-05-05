@@ -155,6 +155,15 @@ export default function EventList({
     );
   }
 
+  function clearSavedEvents() {
+    updateSavedEventIds([]);
+    setSharedEventIds([]);
+    setShareStatus("");
+    if (viewMode === "saved") {
+      setViewMode("all");
+    }
+  }
+
   async function copyShareLink() {
     if (savedEventIds.length === 0) {
       setShareStatus("Save at least one show first.");
@@ -246,6 +255,16 @@ export default function EventList({
         >
           Share saved shows
         </button>
+        {savedEventIds.length > 0 ? (
+          <button
+            type="button"
+            className="filter-pill"
+            data-active="false"
+            onClick={clearSavedEvents}
+          >
+            Clear saved
+          </button>
+        ) : null}
       </div>
       {shareStatus ? (
         <p className="text-sm text-slate-400">{shareStatus}</p>
@@ -375,7 +394,11 @@ export default function EventList({
                       return (
                       <div
                         key={event.id}
-                        className="rounded-lg border border-slate-800 bg-slate-950/55 p-4 transition hover:border-amber-300/55 hover:bg-slate-900/80"
+                        className={`rounded-lg border p-4 transition ${
+                          isSaved
+                            ? "border-cyan-300/40 bg-cyan-300/10 hover:border-cyan-200/70"
+                            : "border-slate-800 bg-slate-950/55 hover:border-amber-300/55 hover:bg-slate-900/80"
+                        }`}
                       >
                         <div className="grid gap-4 md:grid-cols-[8.5rem_1fr_auto] md:items-center">
                           <div className="rounded-md border border-slate-800 bg-slate-900/65 px-3 py-2">
@@ -392,6 +415,12 @@ export default function EventList({
                             </h3>
                             <div className="mt-2 flex flex-wrap items-center gap-2 text-xs font-medium text-slate-400">
                               <span>{event.venue}</span>
+                              {isSaved ? (
+                                <>
+                                  <span aria-hidden="true">/</span>
+                                  <span className="font-semibold text-cyan-200">Saved</span>
+                                </>
+                              ) : null}
                             </div>
                           </div>
                           <div className="flex flex-wrap gap-2 md:justify-end">
