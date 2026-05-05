@@ -22,12 +22,18 @@ function formatTime(localDate: string, localTime?: string) {
   }).format(date);
 }
 
-function groupEventsByMonth(events: EventItem[]) {
+type VenueOption = { key: string; label: string };
+type DateRangeFilter = "all" | "weekend" | "30days";
+type ViewMode = "all" | "saved";
+type GroupMode = "date" | "venue";
+type EventGroup = { key: string; label: string; events: EventItem[] };
+
+function groupEventsByMonth(events: EventItem[]): EventGroup[] {
   const formatter = new Intl.DateTimeFormat("en-US", {
     month: "long",
     year: "numeric"
   });
-  const groups: Array<{ key: string; label: string; events: EventItem[] }> = [];
+  const groups: EventGroup[] = [];
   const indexByKey = new Map<string, number>();
 
   events.forEach((event) => {
@@ -51,9 +57,30 @@ function groupEventsByMonth(events: EventItem[]) {
   return groups;
 }
 
-type VenueOption = { key: string; label: string };
-type DateRangeFilter = "all" | "weekend" | "30days";
-type ViewMode = "all" | "saved";
+function groupEventsByVenue(events: EventItem[], venues: VenueOption[]): EventGroup[] {
+  const labelByKey = new Map(venues.map((venue) => [venue.key, venue.label]));
+  const groups: EventGroup[] = [];
+  const indexByKey = new Map<string, number>();
+
+  events.forEach((event) => {
+    const existingIndex = indexByKey.get(event.venueKey);
+
+    if (existingIndex === undefined) {
+      indexByKey.set(event.venueKey, groups.length);
+      groups.push({
+        key: event.venueKey,
+        label: labelByKey.get(event.venueKey) ?? event.venue,
+        events: [event]
+      });
+      return;
+    }
+
+    groups[existingIndex].events.push(event);
+  });
+
+  return groups.sort((a, b) => a.label.localeCompare(b.label));
+}
+
 const SAVED_EVENTS_STORAGE_KEY = "indyConcertSavedEvents";
 const LAST_VISIT_STORAGE_KEY = "indyConcertLastVisitAt";
 
@@ -122,6 +149,7 @@ export default function EventList({
   const [onlyNewSinceLastVisit, setOnlyNewSinceLastVisit] = useState(false);
   const [dateRange, setDateRange] = useState<DateRangeFilter>("all");
   const [viewMode, setViewMode] = useState<ViewMode>("all");
+  const [groupMode, setGroupMode] = useState<GroupMode>("date");
   const [savedEventIds, setSavedEventIds] = useState<string[]>([]);
   const [sharedEventIds, setSharedEventIds] = useState<string[]>([]);
   const [previousVisitAt, setPreviousVisitAt] = useState<number | null>(null);
@@ -284,7 +312,10 @@ export default function EventList({
     sharedEventIds
   ]);
 
-  const grouped = useMemo(() => groupEventsByMonth(filtered), [filtered]);
+  const grouped = useMemo(
+    () => groupMode === "date" ? groupEventsByMonth(filtered) : groupEventsByVenue(filtered, venues),
+    [filtered, groupMode, venues]
+  );
   const isViewingSharedList = sharedEventIds.length > 0;
   const sharedEventsInFeedCount = useMemo(() => {
     if (!isViewingSharedList) return 0;
@@ -440,6 +471,25 @@ export default function EventList({
             Added last 7 days
           </label>
         </div>
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-sm font-medium text-slate-400">Group</span>
+        <button
+          type="button"
+          className="filter-pill"
+          data-active={groupMode === "date"}
+          onClick={() => setGroupMode("date")}
+        >
+          By date
+        </button>
+        <button
+          type="button"
+          className="filter-pill"
+          data-active={groupMode === "venue"}
+          onClick={() => setGroupMode("venue")}
+        >
+          By venue
+        </button>
       </div>
       <div className="flex flex-wrap items-center gap-3 rounded-lg border border-slate-800 bg-slate-950/35 px-4 py-3 text-sm text-slate-400">
         <span>
