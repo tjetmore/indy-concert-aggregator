@@ -122,8 +122,10 @@ export default function EventList({
       setShareStatus("Loading shared list...");
       fetch(`/api/shared-lists/${encodeURIComponent(sharedListId)}`)
         .then(async (response) => {
-          const data = await response.json();
-          if (!response.ok) throw new Error(data.error ?? "Unable to load shared list.");
+          const data = await parseJsonResponse(response);
+          if (!response.ok) {
+            throw new Error(typeof data.error === "string" ? data.error : "Unable to load shared list.");
+          }
           setSharedEventIds(Array.isArray(data.eventIds) ? data.eventIds : []);
           setViewMode("saved");
           setShareStatus("");
@@ -155,6 +157,16 @@ export default function EventList({
     );
   }
 
+  async function parseJsonResponse(response: Response) {
+    const text = await response.text();
+    if (!text) return {};
+    try {
+      return JSON.parse(text) as Record<string, unknown>;
+    } catch {
+      return { error: text };
+    }
+  }
+
   function clearSavedEvents() {
     updateSavedEventIds([]);
     setSharedEventIds([]);
@@ -179,12 +191,14 @@ export default function EventList({
         },
         body: JSON.stringify({ eventIds: savedEventIds })
       });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error ?? "Unable to create share link.");
+      const data = await parseJsonResponse(response);
+      if (!response.ok) {
+        throw new Error(typeof data.error === "string" ? data.error : "Unable to create share link.");
+      }
 
       const url = new URL(window.location.href);
       url.search = "";
-      url.searchParams.set("list", data.id);
+      url.searchParams.set("list", String(data.id));
       await window.navigator.clipboard.writeText(url.toString());
       setShareStatus("Copied share link");
     } catch (error) {

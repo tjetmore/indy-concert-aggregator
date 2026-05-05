@@ -1,8 +1,9 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { randomBytes } from "node:crypto";
+import { tmpdir } from "node:os";
 
-const CACHE_DIR = join(process.cwd(), ".next", "cache", "shared-lists");
+const CACHE_DIR = join(tmpdir(), "indy-concert-shared-lists");
 const KV_REST_API_URL = process.env.KV_REST_API_URL;
 const KV_REST_API_TOKEN = process.env.KV_REST_API_TOKEN;
 const TTL_SECONDS = 60 * 60 * 24 * 90;
@@ -19,12 +20,15 @@ export async function saveSharedList(id: string, eventIds: string[]) {
   const payload = JSON.stringify({ eventIds, createdAt: new Date().toISOString() });
 
   if (canUseKv()) {
-    await fetch(`${KV_REST_API_URL}/set/shared-list:${id}/${encodeURIComponent(payload)}?EX=${TTL_SECONDS}`, {
+    const response = await fetch(`${KV_REST_API_URL}/set/shared-list:${id}/${encodeURIComponent(payload)}?EX=${TTL_SECONDS}`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${KV_REST_API_TOKEN}`
       }
     });
+    if (!response.ok) {
+      throw new Error(`Shared list storage failed: ${response.status}`);
+    }
     return;
   }
 
