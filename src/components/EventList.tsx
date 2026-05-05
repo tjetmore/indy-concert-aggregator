@@ -206,6 +206,17 @@ export default function EventList({
     }
   }
 
+  function exitSharedList() {
+    setSharedEventIds([]);
+    setViewMode("all");
+    setShareStatus("");
+
+    const url = new URL(window.location.href);
+    url.searchParams.delete("list");
+    url.searchParams.delete("saved");
+    window.history.replaceState(null, "", url.toString());
+  }
+
   async function copyShareLink() {
     if (savedEventIds.length === 0) {
       setShareStatus("Save at least one show first.");
@@ -274,6 +285,12 @@ export default function EventList({
   ]);
 
   const grouped = useMemo(() => groupEventsByMonth(filtered), [filtered]);
+  const isViewingSharedList = sharedEventIds.length > 0;
+  const sharedEventsInFeedCount = useMemo(() => {
+    if (!isViewingSharedList) return 0;
+    const eventIds = new Set(events.map((event) => event.id));
+    return sharedEventIds.filter((id) => eventIds.has(id)).length;
+  }, [events, isViewingSharedList, sharedEventIds]);
   const newSinceLastVisitCount = useMemo(
     () => events.filter((event) => isNewSinceVisit(event, previousVisitAt)).length,
     [events, previousVisitAt]
@@ -304,17 +321,21 @@ export default function EventList({
           data-active={viewMode === "saved"}
           onClick={() => setViewMode("saved")}
         >
-          {sharedEventIds.length ? "Shared saves" : `Saved shows (${savedEventIds.length})`}
+          {isViewingSharedList
+            ? `Shared list (${sharedEventsInFeedCount})`
+            : `Saved shows (${savedEventIds.length})`}
         </button>
-        <button
-          type="button"
-          className="filter-pill"
-          data-active="false"
-          onClick={() => void copyShareLink()}
-        >
-          Share saved shows
-        </button>
-        {savedEventIds.length > 0 ? (
+        {!isViewingSharedList ? (
+          <button
+            type="button"
+            className="filter-pill"
+            data-active="false"
+            onClick={() => void copyShareLink()}
+          >
+            Share saved shows
+          </button>
+        ) : null}
+        {!isViewingSharedList && savedEventIds.length > 0 ? (
           <button
             type="button"
             className="filter-pill"
@@ -328,9 +349,26 @@ export default function EventList({
       {shareStatus ? (
         <p className="text-sm text-slate-400">{shareStatus}</p>
       ) : null}
-      {sharedEventIds.length ? (
-        <div className="rounded-lg border border-cyan-300/25 bg-cyan-300/10 p-3 text-sm text-cyan-100">
-          Viewing a shared saved-show list.
+      {isViewingSharedList ? (
+        <div className="rounded-lg border border-cyan-300/25 bg-cyan-300/10 p-4 text-sm text-cyan-100">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-base font-semibold text-cyan-50">
+                Shared saved shows
+              </h2>
+              <p className="mt-1 text-cyan-100/80">
+                {sharedEventsInFeedCount} concert{sharedEventsInFeedCount === 1 ? "" : "s"} on this list.
+                Save anything interesting to keep it in your own saved shows.
+              </p>
+            </div>
+            <button
+              type="button"
+              className="shrink-0 rounded-full border border-cyan-200/40 px-3 py-2 text-sm font-semibold text-cyan-50 transition hover:border-cyan-100 hover:text-white"
+              onClick={exitSharedList}
+            >
+              View all concerts
+            </button>
+          </div>
         </div>
       ) : null}
 
