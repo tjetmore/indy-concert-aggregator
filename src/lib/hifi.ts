@@ -5,6 +5,7 @@ import type { EventItem } from "@/lib/ticketmaster";
 const HIFI_EVENTS_URL = "https://hifiindy.com/events/";
 const REVALIDATE_SECONDS = 900;
 const MAX_PAGES = 15;
+const DETAIL_CONCURRENCY = 8;
 let hasLoggedDebug = false;
 const SNAPSHOT_PATH = "/tmp/hifi-events.html";
 const USE_SNAPSHOT = process.env.HIFI_DEBUG_SNAPSHOT === "1";
@@ -63,6 +64,12 @@ function extractDateFromText(text: string) {
   return formatLocalDate(monthIndex, day);
 }
 
+function parseLocalTimeFromIso(value?: string) {
+  const match = value?.match(/T(\d{2}):(\d{2})(?::(\d{2}))?/);
+  if (!match) return undefined;
+  return `${match[1]}:${match[2]}:${match[3] ?? "00"}`;
+}
+
 function resolveUrl(href: string, baseUrl: string) {
   try {
     return new URL(href, baseUrl).toString();
@@ -113,6 +120,61 @@ function parseEventsFromHtml(html: string, baseUrl: string) {
   });
 
   return { events, cardCount: cards.length };
+}
+
+function parseEventTimeFromDetailHtml(html: string) {
+  const $ = load(html);
+  const scripts = $("script[type='application/ld+json']").toArray();
+
+  for (const script of scripts) {
+    const raw = $(script).text().trim();
+    if (!raw) continue;
+
+    try {
+      const parsed = JSON.parse(raw);
+      const items = Array.isArray(parsed) ? parsed : [parsed];
+      for (const item of items) {
+        if (item?.["@type"] === "Event" && typeof item.startDate === "string") {
+          return parseLocalTimeFromIso(item.startDate);
+        }
+      }
+    } catch {
+      continue;
+    }
+  }
+
+  return undefined;
+}
+
+async function fetchEventTime(url: string) {
+  const response = await fetch(url, {
+    next: { revalidate: REVALIDATE_SECONDS }
+  });
+  if (!response.ok) return undefined;
+  return parseEventTimeFromDetailHtml(await response.text());
+}
+
+async function mapWithConcurrency<T, U>(
+  items: T[],
+  concurrency: number,
+  mapper: (item: T) => Promise<U>
+) {
+  const results = new Array<U>(items.length);
+  let nextIndex = 0;
+
+  async function worker() {
+    while (nextIndex < items.length) {
+      const currentIndex = nextIndex;
+      nextIndex += 1;
+      results[currentIndex] = await mapper(items[currentIndex]);
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(concurrency, items.length) }, () => worker())
+  );
+
+  return results;
 }
 
 function normalizePageUrl(url: string) {
@@ -199,6 +261,13 @@ export async function fetchHiFiEvents() {
       console.log("[HI-FI] sample", page1Sample);
     }
   }
+
+  const eventTimes = await mapWithConcurrency(events, DETAIL_CONCURRENCY, (event) =>
+    fetchEventTime(event.url)
+  );
+  events.forEach((event, index) => {
+    event.localTime = eventTimes[index];
+  });
 
   return events;
 }

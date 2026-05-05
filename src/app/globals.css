@@ -1,8 +1,15 @@
 @import "tailwindcss";
 
-/* Simple global defaults (no @apply) */
 :root {
   color-scheme: dark;
+  --page-bg: #0b0f14;
+  --panel: #111821;
+  --panel-soft: #151f2a;
+  --border: #263241;
+  --text: #f4f7fb;
+  --muted: #9aa8b8;
+  --amber: #f3b44b;
+  --cyan: #5bd5df;
 }
 
 html,
@@ -12,7 +19,65 @@ body {
 
 body {
   margin: 0;
-  background: #09090b; /* near zinc-950 */
-  color: #fafafa;
+  background:
+    linear-gradient(180deg, rgba(18, 28, 38, 0.92), rgba(11, 15, 20, 0.98) 28rem),
+    var(--page-bg);
+  color: var(--text);
+  font-family: Arial, Helvetica, sans-serif;
 }
 
+::selection {
+  background: rgba(243, 180, 75, 0.28);
+}
+
+.control-label {
+  color: var(--muted);
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  margin-bottom: 0.45rem;
+  text-transform: uppercase;
+}
+
+.control-field {
+  background: #0d131b;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  min-height: 2.65rem;
+  padding: 0.65rem 0.8rem;
+  width: 100%;
+}
+
+.control-field:focus {
+  border-color: var(--amber);
+  box-shadow: 0 0 0 3px rgba(243, 180, 75, 0.16);
+  outline: none;
+}
+
+.filter-pill {
+  align-items: center;
+  background: #0d131b;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--muted);
+  display: inline-flex;
+  font-size: 0.85rem;
+  font-weight: 700;
+  justify-content: center;
+  min-height: 2.35rem;
+  padding: 0.55rem 0.85rem;
+  transition: border-color 160ms ease, color 160ms ease, background 160ms ease;
+}
+
+.filter-pill:hover {
+  border-color: #3d4c5f;
+  color: var(--text);
+}
+
+.filter-pill[data-active="true"] {
+  background: rgba(91, 213, 223, 0.12);
+  border-color: rgba(91, 213, 223, 0.58);
+  color: #d8fbff;
+}

@@ -6,6 +6,8 @@ export type EventItem = {
   venue: string;
   venueKey: string;
   url: string;
+  firstSeenAt?: string;
+  publicVisibilityStartDateTime?: string;
 };
 
 export const VENUE_KEYWORDS = {
@@ -20,7 +22,10 @@ export const VENUE_IDS = {
   oldnational: "KovZpZAEAkvA",
   vogue: "KovZpZAEktEA",
   hifi: "Z7r9jZaAMC",
-  gainbridge: "KovZpZA6keIA"
+  rocktheruins: "external-rocktheruins",
+  gainbridge: "KovZpZA6keIA",
+  lucasoil: "KovZpZAdEJEA",
+  fishers: "KovZ917AmVB"
 } as const;
 
 export const VENUE_LABELS: Record<keyof typeof VENUE_IDS, string> = {
@@ -29,7 +34,10 @@ export const VENUE_LABELS: Record<keyof typeof VENUE_IDS, string> = {
   oldnational: "Old National Centre",
   vogue: "The Vogue",
   hifi: "HI-FI",
-  gainbridge: "Gainbridge Fieldhouse"
+  rocktheruins: "Rock the Ruins",
+  gainbridge: "Gainbridge Fieldhouse",
+  lucasoil: "Lucas Oil Stadium",
+  fishers: "Fishers Event Center"
 };
 
 
@@ -44,13 +52,29 @@ function getApiKey() {
   return apiKey;
 }
 
-async function fetchJson<T>(url: string): Promise<T> {
+function isPassLikeListing(name: string) {
+  return /\b(?:\d+|one|two|three|four|five)[-\s]?day\s+ticket\b/i.test(name) ||
+    /\b(?:multi|single)[-\s]?day\s+pass\b/i.test(name) ||
+    /\b(?:festival|season)\s+pass\b/i.test(name) ||
+    /\bvalid\s+(?:both|all)\s+days\b/i.test(name) ||
+    /\bcannot\s+split\b/i.test(name);
+}
+
+async function fetchJson<T>(url: string, attempt = 0): Promise<T> {
   const response = await fetch(url, {
     next: { revalidate: REVALIDATE_SECONDS }
   });
 
   if (!response.ok) {
     const text = await response.text();
+    if (response.status === 429 && attempt < 3) {
+      const retryAfter = Number(response.headers.get("retry-after"));
+      const waitMs = Number.isFinite(retryAfter)
+        ? retryAfter * 1000
+        : 500 * Math.pow(2, attempt);
+      await new Promise((resolve) => setTimeout(resolve, waitMs));
+      return fetchJson<T>(url, attempt + 1);
+    }
     throw new Error(`Ticketmaster request failed: ${response.status} ${text}`);
   }
 
@@ -87,6 +111,7 @@ export async function fetchEventsForVenue(venueKey: string, venueId: string) {
         name: string;
         url: string;
         dates?: { start?: { localDate?: string; localTime?: string } };
+        sales?: { public?: { startDateTime?: string } };
         classifications?: Array<{
           segment?: { name?: string };
         }>;
@@ -99,14 +124,16 @@ export async function fetchEventsForVenue(venueKey: string, venueId: string) {
 
   return events
     .map((event) => {
+      if (isPassLikeListing(event.name)) return null;
+
       const segmentName = event.classifications?.[0]?.segment?.name;
-      const isAllowedSegment =
-        segmentName === "Music" || segmentName === "Arts & Theatre";
-      if (!isAllowedSegment) return null;
+      const isWeirdAl = /weird\s+al|yankovic/i.test(event.name);
+      if (segmentName !== "Music" && !isWeirdAl) return null;
 
       const localDate = event.dates?.start?.localDate;
       const venueName = event._embedded?.venues?.[0]?.name;
       if (!localDate || !venueName) return null;
+      if (venueKey === "vogue" && /vogue theatre/i.test(venueName)) return null;
 
       return {
         id: event.id,
@@ -115,7 +142,8 @@ export async function fetchEventsForVenue(venueKey: string, venueId: string) {
         localTime: event.dates?.start?.localTime,
         venue: venueName,
         venueKey,
-        url: event.url
+        url: event.url,
+        publicVisibilityStartDateTime: event.sales?.public?.startDateTime
       } satisfies EventItem;
     })
     .filter(Boolean);
