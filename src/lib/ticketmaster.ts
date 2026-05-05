@@ -45,11 +45,7 @@ const TICKETMASTER_BASE_URL = "https://app.ticketmaster.com/discovery/v2";
 const REVALIDATE_SECONDS = 900;
 
 function getApiKey() {
-  const apiKey = process.env.TICKETMASTER_API_KEY;
-  if (!apiKey) {
-    throw new Error("Missing TICKETMASTER_API_KEY in environment.");
-  }
-  return apiKey;
+  return process.env.TICKETMASTER_API_KEY;
 }
 
 function isPassLikeListing(name: string) {
@@ -83,6 +79,10 @@ async function fetchJson<T>(url: string, attempt = 0): Promise<T> {
 
 export async function lookupVenueId(keyword: string) {
   const apiKey = getApiKey();
+  if (!apiKey) {
+    throw new Error("Missing TICKETMASTER_API_KEY in environment.");
+  }
+
   const url = new URL(`${TICKETMASTER_BASE_URL}/venues.json`);
   url.searchParams.set("apikey", apiKey);
   url.searchParams.set("keyword", keyword);
@@ -98,6 +98,11 @@ export async function lookupVenueId(keyword: string) {
 
 export async function fetchEventsForVenue(venueKey: string, venueId: string) {
   const apiKey = getApiKey();
+  if (!apiKey) {
+    console.warn(`Skipping Ticketmaster venue ${venueKey}: missing TICKETMASTER_API_KEY.`);
+    return [];
+  }
+
   const url = new URL(`${TICKETMASTER_BASE_URL}/events.json`);
   url.searchParams.set("apikey", apiKey);
   url.searchParams.set("venueId", venueId);
