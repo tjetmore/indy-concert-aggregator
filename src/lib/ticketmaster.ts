@@ -96,7 +96,7 @@ export async function lookupVenueId(keyword: string) {
   return venue ? { id: venue.id, name: venue.name } : null;
 }
 
-export async function fetchEventsForVenue(venueKey: string, venueId: string) {
+export async function fetchEventsForVenue(venueKey: string, venueId: string): Promise<EventItem[]> {
   const apiKey = getApiKey();
   if (!apiKey) {
     console.warn(`Skipping Ticketmaster venue ${venueKey}: missing TICKETMASTER_API_KEY.`);
@@ -127,8 +127,7 @@ export async function fetchEventsForVenue(venueKey: string, venueId: string) {
 
   const events = data._embedded?.events ?? [];
 
-  return events
-    .map((event) => {
+  const mappedEvents: Array<EventItem | null> = events.map((event) => {
       if (isPassLikeListing(event.name)) return null;
 
       const segmentName = event.classifications?.[0]?.segment?.name;
@@ -140,18 +139,26 @@ export async function fetchEventsForVenue(venueKey: string, venueId: string) {
       if (!localDate || !venueName) return null;
       if (venueKey === "vogue" && /vogue theatre/i.test(venueName)) return null;
 
-      return {
+      const item: EventItem = {
         id: event.id,
         name: event.name,
         localDate,
-        localTime: event.dates?.start?.localTime,
         venue: venueName,
         venueKey,
-        url: event.url,
-        publicVisibilityStartDateTime: event.sales?.public?.startDateTime
-      } satisfies EventItem;
-    })
-    .filter(Boolean);
+        url: event.url
+      };
+
+      const localTime = event.dates?.start?.localTime;
+      const publicVisibilityStartDateTime = event.sales?.public?.startDateTime;
+      if (localTime) item.localTime = localTime;
+      if (publicVisibilityStartDateTime) {
+        item.publicVisibilityStartDateTime = publicVisibilityStartDateTime;
+      }
+
+      return item;
+    });
+
+  return mappedEvents.filter((event): event is EventItem => event !== null);
 }
 
 export function sortEventsAscending(events: EventItem[]) {

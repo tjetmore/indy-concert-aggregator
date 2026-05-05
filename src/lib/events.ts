@@ -6,6 +6,7 @@ import {
   fetchEventsForVenue,
   sortEventsAscending,
   VENUE_IDS,
+  VENUE_LABELS,
   type EventItem
 } from "@/lib/ticketmaster";
 import { fetchVogueEvents } from "@/lib/vogue";
@@ -14,6 +15,14 @@ const DEV_DELAY_MS = 250;
 const SNAPSHOT_PATH = join(process.cwd(), ".next", "cache", "events-snapshot.json");
 const SNAPSHOT_MAX_AGE_DAYS = 120;
 const EXTERNAL_VENUE_KEYS = new Set(["vogue", "rocktheruins"]);
+
+export type SourceHealth = {
+  key: string;
+  label: string;
+  status: "ok" | "failed";
+  eventCount: number;
+  error?: string;
+};
 
 function wait(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -105,31 +114,75 @@ export function getHasMissingVenueId() {
   return getVenueEntries().some(([, venueId]) => !venueId);
 }
 
-export async function getConcertEvents() {
+async function fetchSource(
+  key: string,
+  label: string,
+  fetchEvents: () => Promise<EventItem[]>
+) {
+  try {
+    const events = await fetchEvents();
+    return {
+      events,
+      health: {
+        key,
+        label,
+        status: "ok",
+        eventCount: events.length
+      } satisfies SourceHealth
+    };
+  } catch (error) {
+    console.error(`[events] ${label} failed`, error);
+    return {
+      events: [],
+      health: {
+        key,
+        label,
+        status: "failed",
+        eventCount: 0,
+        error: error instanceof Error ? error.message : "Unknown source error"
+      } satisfies SourceHealth
+    };
+  }
+}
+
+export async function getConcertData() {
   const ticketmasterVenueEntries = getVenueEntries().filter(
     ([venueKey]) => !EXTERNAL_VENUE_KEYS.has(venueKey)
   );
 
-  const eventsByVenue: Awaited<ReturnType<typeof fetchEventsForVenue>>[] = [];
+  const sourceResults: Array<{ events: EventItem[]; health: SourceHealth }> = [];
+
   for (const [venueKey, venueId] of ticketmasterVenueEntries) {
-    const events = await fetchEventsForVenue(venueKey, venueId);
-    eventsByVenue.push(events);
+    const result = await fetchSource(
+      `ticketmaster-${venueKey}`,
+      VENUE_LABELS[venueKey as keyof typeof VENUE_LABELS] ?? `Ticketmaster ${venueKey}`,
+      () => fetchEventsForVenue(venueKey, venueId)
+    );
+    sourceResults.push(result);
     if (process.env.NODE_ENV === "development") {
       await wait(DEV_DELAY_MS);
     }
   }
 
-  const hifiEvents = await fetchHiFiEvents();
-  const vogueEvents = await fetchVogueEvents();
-  const rockTheRuinsEvents = await fetchRockTheRuinsEvents();
-  const rawEvents = [
-    ...hifiEvents,
-    ...vogueEvents,
-    ...rockTheRuinsEvents,
-    ...eventsByVenue.flat()
-  ].filter((event): event is EventItem => Boolean(event));
+  sourceResults.push(
+    await fetchSource("hifi-calendar", "HI-FI calendar", fetchHiFiEvents),
+    await fetchSource("vogue-calendar", "The Vogue calendar", fetchVogueEvents),
+    await fetchSource("rocktheruins-calendar", "Rock the Ruins calendar", fetchRockTheRuinsEvents)
+  );
+
+  const rawEvents = sourceResults
+    .flatMap((result) => result.events)
+    .filter((event): event is EventItem => Boolean(event));
 
   const mergedEvents = dedupeEvents(rawEvents);
   const eventsWithFirstSeen = await annotateFirstSeen(mergedEvents);
-  return sortEventsAscending(filterUpcomingEvents(eventsWithFirstSeen));
+  return {
+    events: sortEventsAscending(filterUpcomingEvents(eventsWithFirstSeen)),
+    sourceHealth: sourceResults.map((result) => result.health)
+  };
+}
+
+export async function getConcertEvents() {
+  const { events } = await getConcertData();
+  return events;
 }

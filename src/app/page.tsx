@@ -1,7 +1,7 @@
 import EventList from "@/components/EventList";
 import { VENUE_LABELS } from "@/lib/ticketmaster";
 import {
-  getConcertEvents,
+  getConcertData,
   getHasMissingVenueId,
   getVenueEntries
 } from "@/lib/events";
@@ -44,12 +44,13 @@ export default async function HomePage() {
     );
   }
 
-  const events = await getConcertEvents();
+  const { events, sourceHealth } = await getConcertData();
   const venues = venueEntries.map(([venueKey]) => ({
     key: venueKey,
     label: VENUE_LABELS[venueKey as keyof typeof VENUE_LABELS] ?? venueKey
   }));
-  const sourceCount = venues.length + 3;
+  const sourceCount = sourceHealth.length;
+  const failedSources = sourceHealth.filter((source) => source.status === "failed");
   const lastUpdated = formatLastUpdated(new Date());
 
   return (
@@ -88,6 +89,25 @@ export default async function HomePage() {
             </div>
           </div>
         </header>
+
+        {failedSources.length > 0 ? (
+          <section className="rounded-lg border border-amber-300/35 bg-amber-300/10 p-4 text-sm text-amber-100">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <h2 className="font-semibold text-amber-50">
+                  Some venue sources may be stale
+                </h2>
+                <p className="mt-1 text-amber-100/80">
+                  {failedSources.map((source) => source.label).join(", ")} failed during
+                  the latest refresh, so some shows may be missing.
+                </p>
+              </div>
+              <span className="shrink-0 rounded-full border border-amber-200/35 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-amber-100">
+                {failedSources.length} source{failedSources.length === 1 ? "" : "s"} down
+              </span>
+            </div>
+          </section>
+        ) : null}
 
         <EventList events={events} venues={venues} />
         <p className="border-t border-slate-800/90 pt-5 text-xs text-slate-500">
