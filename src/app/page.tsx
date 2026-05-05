@@ -8,6 +8,18 @@ import {
 
 export const revalidate = 900;
 
+function formatLastUpdated(date: Date) {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone: "America/Indiana/Indianapolis",
+    timeZoneName: "short"
+  }).format(date);
+}
+
 export default async function HomePage() {
   const venueEntries = getVenueEntries();
   const hasMissingVenueId = getHasMissingVenueId();
@@ -38,6 +50,7 @@ export default async function HomePage() {
     label: VENUE_LABELS[venueKey as keyof typeof VENUE_LABELS] ?? venueKey
   }));
   const sourceCount = venues.length + 3;
+  const lastUpdated = formatLastUpdated(new Date());
 
   return (
     <main className="min-h-screen px-4 py-6 sm:px-6 lg:px-8">
@@ -54,6 +67,9 @@ export default async function HomePage() {
               <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300 md:text-base">
                 Browse upcoming shows from local venue calendars, filter by
                 place, and quickly find the next night worth going out.
+              </p>
+              <p className="mt-3 text-xs font-medium uppercase tracking-[0.12em] text-slate-500">
+                Last updated {lastUpdated}
               </p>
             </div>
             <div className="grid grid-cols-2 gap-3 text-right sm:flex">
