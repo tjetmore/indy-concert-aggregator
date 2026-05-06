@@ -1,4 +1,5 @@
-import { readFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { join } from "node:path";
 import { load } from "cheerio";
 import type { EventItem } from "@/lib/ticketmaster";
 
@@ -9,7 +10,11 @@ const DETAIL_CONCURRENCY = 20;
 const DETAIL_TIMEOUT_MS = 2500;
 let hasLoggedDebug = false;
 const SNAPSHOT_PATH = "/tmp/hifi-events.html";
+const TIME_CACHE_PATH = join(process.cwd(), ".next", "cache", "hifi-times.json");
+const TIME_CACHE_KV_KEY = "hifi-event-times";
 const USE_SNAPSHOT = process.env.HIFI_DEBUG_SNAPSHOT === "1";
+const KV_REST_API_URL = process.env.KV_REST_API_URL;
+const KV_REST_API_TOKEN = process.env.KV_REST_API_TOKEN;
 
 const MONTHS: Record<string, number> = {
   jan: 0,
@@ -76,6 +81,74 @@ function resolveUrl(href: string, baseUrl: string) {
     return new URL(href, baseUrl).toString();
   } catch {
     return href;
+  }
+}
+
+function canUseKv() {
+  return Boolean(KV_REST_API_URL && KV_REST_API_TOKEN);
+}
+
+async function loadTimeCacheFromFile() {
+  try {
+    const raw = await readFile(TIME_CACHE_PATH, "utf-8");
+    return JSON.parse(raw) as Record<string, string>;
+  } catch {
+    return {};
+  }
+}
+
+async function saveTimeCacheToFile(cache: Record<string, string>) {
+  await mkdir(join(process.cwd(), ".next", "cache"), { recursive: true });
+  await writeFile(TIME_CACHE_PATH, JSON.stringify(cache), "utf-8");
+}
+
+async function loadTimeCache() {
+  if (canUseKv()) {
+    try {
+      const response = await fetch(`${KV_REST_API_URL}/get/${TIME_CACHE_KV_KEY}`, {
+        headers: {
+          Authorization: `Bearer ${KV_REST_API_TOKEN}`
+        },
+        cache: "no-store"
+      });
+      if (response.ok) {
+        const data = (await response.json()) as { result?: string | null };
+        if (data.result) {
+          return JSON.parse(data.result) as Record<string, string>;
+        }
+      }
+    } catch (error) {
+      console.error("[HI-FI] Failed to load time cache from KV", error);
+    }
+  }
+
+  return loadTimeCacheFromFile();
+}
+
+async function saveTimeCache(cache: Record<string, string>) {
+  if (canUseKv()) {
+    try {
+      const payload = encodeURIComponent(JSON.stringify(cache));
+      const response = await fetch(`${KV_REST_API_URL}/set/${TIME_CACHE_KV_KEY}/${payload}`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${KV_REST_API_TOKEN}`
+        },
+        cache: "no-store"
+      });
+      if (!response.ok) {
+        throw new Error(`KV time cache save failed: ${response.status}`);
+      }
+      return;
+    } catch (error) {
+      console.error("[HI-FI] Failed to save time cache to KV", error);
+    }
+  }
+
+  try {
+    await saveTimeCacheToFile(cache);
+  } catch (error) {
+    console.error("[HI-FI] Failed to save time cache to file", error);
   }
 }
 
@@ -268,11 +341,29 @@ export async function fetchHiFiEvents() {
     }
   }
 
-  const eventTimes = await mapWithConcurrency(events, DETAIL_CONCURRENCY, (event) =>
-    fetchEventTime(event.url)
-  );
-  events.forEach((event, index) => {
-    event.localTime = eventTimes[index];
+  const timeCache = await loadTimeCache();
+  const eventsMissingTimes = events.filter((event) => !timeCache[event.url]);
+
+  if (eventsMissingTimes.length > 0) {
+    const fetchedTimes = await mapWithConcurrency(
+      eventsMissingTimes,
+      DETAIL_CONCURRENCY,
+      (event) => fetchEventTime(event.url)
+    );
+    let hasNewTimes = false;
+    eventsMissingTimes.forEach((event, index) => {
+      const time = fetchedTimes[index];
+      if (!time) return;
+      timeCache[event.url] = time;
+      hasNewTimes = true;
+    });
+    if (hasNewTimes) {
+      await saveTimeCache(timeCache);
+    }
+  }
+
+  events.forEach((event) => {
+    event.localTime = timeCache[event.url];
   });
 
   return events;
