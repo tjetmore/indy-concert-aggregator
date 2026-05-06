@@ -13,8 +13,11 @@ import { fetchVogueEvents } from "@/lib/vogue";
 
 const DEV_DELAY_MS = 250;
 const SNAPSHOT_PATH = join(process.cwd(), ".next", "cache", "events-snapshot.json");
+const SNAPSHOT_KV_KEY = "events-snapshot";
 const SNAPSHOT_MAX_AGE_DAYS = 120;
 const EXTERNAL_VENUE_KEYS = new Set(["vogue", "rocktheruins"]);
+const KV_REST_API_URL = process.env.KV_REST_API_URL;
+const KV_REST_API_TOKEN = process.env.KV_REST_API_TOKEN;
 
 export type SourceHealth = {
   key: string;
@@ -28,7 +31,11 @@ function wait(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function loadSnapshot() {
+function canUseKv() {
+  return Boolean(KV_REST_API_URL && KV_REST_API_TOKEN);
+}
+
+async function loadSnapshotFromFile() {
   try {
     const raw = await readFile(SNAPSHOT_PATH, "utf-8");
     return JSON.parse(raw) as Record<string, string>;
@@ -37,9 +44,59 @@ async function loadSnapshot() {
   }
 }
 
-async function saveSnapshot(snapshot: Record<string, string>) {
+async function saveSnapshotToFile(snapshot: Record<string, string>) {
   await mkdir(join(process.cwd(), ".next", "cache"), { recursive: true });
   await writeFile(SNAPSHOT_PATH, JSON.stringify(snapshot), "utf-8");
+}
+
+async function loadSnapshot() {
+  if (canUseKv()) {
+    try {
+      const response = await fetch(`${KV_REST_API_URL}/get/${SNAPSHOT_KV_KEY}`, {
+        headers: {
+          Authorization: `Bearer ${KV_REST_API_TOKEN}`
+        },
+        cache: "no-store"
+      });
+      if (response.ok) {
+        const data = (await response.json()) as { result?: string | null };
+        if (data.result) {
+          return JSON.parse(data.result) as Record<string, string>;
+        }
+      }
+    } catch (error) {
+      console.error("[events] Failed to load first-seen snapshot from KV", error);
+    }
+  }
+
+  return loadSnapshotFromFile();
+}
+
+async function saveSnapshot(snapshot: Record<string, string>) {
+  if (canUseKv()) {
+    try {
+      const payload = encodeURIComponent(JSON.stringify(snapshot));
+      const response = await fetch(`${KV_REST_API_URL}/set/${SNAPSHOT_KV_KEY}/${payload}`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${KV_REST_API_TOKEN}`
+        },
+        cache: "no-store"
+      });
+      if (!response.ok) {
+        throw new Error(`KV snapshot save failed: ${response.status}`);
+      }
+      return;
+    } catch (error) {
+      console.error("[events] Failed to save first-seen snapshot to KV", error);
+    }
+  }
+
+  try {
+    await saveSnapshotToFile(snapshot);
+  } catch (error) {
+    console.error("[events] Failed to save first-seen snapshot to file", error);
+  }
 }
 
 function pruneSnapshot(snapshot: Record<string, string>, now: Date) {
