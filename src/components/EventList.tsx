@@ -533,7 +533,7 @@ export default function EventList({
               onChange={(event) => setOnlyNewThisWeek(event.target.checked)}
               className="h-4 w-4 rounded border-slate-600 accent-amber-400"
             />
-            Added last 7 days
+            Newly added
           </label>
         </div>
       </div>
