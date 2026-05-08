@@ -34,7 +34,7 @@ export const VENUE_LABELS: Record<keyof typeof VENUE_IDS, string> = {
 
 
 const TICKETMASTER_BASE_URL = "https://app.ticketmaster.com/discovery/v2";
-const REVALIDATE_SECONDS = 900;
+const REVALIDATE_SECONDS = 3600;
 
 function getApiKey() {
   const apiKey = process.env.TICKETMASTER_API_KEY;

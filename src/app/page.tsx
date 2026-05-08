@@ -6,7 +6,7 @@ import {
   getVenueEntries
 } from "@/lib/events";
 
-export const revalidate = 900;
+export const revalidate = 3600;
 
 function formatLastUpdated(date: Date) {
   return new Intl.DateTimeFormat("en-US", {

@@ -4,7 +4,7 @@ import { load } from "cheerio";
 import type { EventItem } from "@/lib/ticketmaster";
 
 const HIFI_EVENTS_URL = "https://hifiindy.com/events/";
-const REVALIDATE_SECONDS = 900;
+const REVALIDATE_SECONDS = 3600;
 const MAX_PAGES = 15;
 const DETAIL_CONCURRENCY = 20;
 const DETAIL_TIMEOUT_MS = 2500;

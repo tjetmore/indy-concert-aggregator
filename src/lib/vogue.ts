@@ -2,7 +2,7 @@ import { load } from "cheerio";
 import type { EventItem } from "@/lib/ticketmaster";
 
 const VOGUE_CALENDAR_URL = "https://www.thevogue.com/calendar";
-const REVALIDATE_SECONDS = 900;
+const REVALIDATE_SECONDS = 3600;
 
 const MONTHS: Record<string, number> = {
   january: 1,

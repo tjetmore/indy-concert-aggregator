@@ -2,7 +2,7 @@ import { load } from "cheerio";
 import type { EventItem } from "@/lib/ticketmaster";
 
 const ROCK_THE_RUINS_URL = "https://www.rocktheruins.com/";
-const REVALIDATE_SECONDS = 900;
+const REVALIDATE_SECONDS = 3600;
 
 const MONTHS: Record<string, number> = {
   january: 1,
