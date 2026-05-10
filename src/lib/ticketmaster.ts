@@ -25,7 +25,20 @@ export const VENUE_IDS = {
   rocktheruins: "external-rocktheruins",
   gainbridge: "KovZpZA6keIA",
   lucasoil: "KovZpZAdEJEA",
-  fishers: "KovZ917AmVB"
+  fishers: "KovZ917AmVB",
+  saltshedindoors: "KovZ917AI5F",
+  saltshedoutdoors: "KovZ917Amf0",
+  aragon: "KovZpZAFdJnA",
+  riviera: "KovZpZAan6kA",
+  vic: "KovZpZA17AEA",
+  chicagotheatre: "KovZpZA6AJ6A",
+  unitedcenter: "KovZpa2M7e",
+  northerlyisland: "KovZpZAEA7IA",
+  kembalive: "KovZ917AIkj",
+  newportmusic: "KovZpZAEAt6A",
+  arcolumbus: "KovZpZAEAAIA",
+  nationwidearena: "KovZpZA6kelA",
+  schottenstein: "KovZpZA6A1EA"
 } as const;
 
 export const VENUE_LABELS: Record<keyof typeof VENUE_IDS, string> = {
@@ -37,7 +50,20 @@ export const VENUE_LABELS: Record<keyof typeof VENUE_IDS, string> = {
   rocktheruins: "Rock the Ruins",
   gainbridge: "Gainbridge Fieldhouse",
   lucasoil: "Lucas Oil Stadium",
-  fishers: "Fishers Event Center"
+  fishers: "Fishers Event Center",
+  saltshedindoors: "The Salt Shed Indoors (Chicago)",
+  saltshedoutdoors: "The Salt Shed Outdoors (Chicago)",
+  aragon: "Aragon Ballroom (Chicago)",
+  riviera: "Riviera Theatre (Chicago)",
+  vic: "Vic Theatre (Chicago)",
+  chicagotheatre: "The Chicago Theatre (Chicago)",
+  unitedcenter: "United Center (Chicago)",
+  northerlyisland: "Huntington Bank Pavilion (Chicago)",
+  kembalive: "KEMBA Live! (Columbus)",
+  newportmusic: "Newport Music Hall (Columbus)",
+  arcolumbus: "A&R Music Bar (Columbus)",
+  nationwidearena: "Nationwide Arena (Columbus)",
+  schottenstein: "Schottenstein Center (Columbus)"
 };
 
 

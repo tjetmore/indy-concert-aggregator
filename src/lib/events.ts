@@ -11,7 +11,7 @@ import {
 } from "@/lib/ticketmaster";
 import { fetchVogueEvents } from "@/lib/vogue";
 
-const DEV_DELAY_MS = 250;
+const TICKETMASTER_DELAY_MS = 300;
 const SNAPSHOT_PATH = join(process.cwd(), ".next", "cache", "events-snapshot.json");
 const SNAPSHOT_KV_KEY = "events-snapshot";
 const SNAPSHOT_MAX_AGE_DAYS = 120;
@@ -216,9 +216,7 @@ export async function getConcertData() {
       () => fetchEventsForVenue(venueKey, venueId)
     );
     sourceResults.push(result);
-    if (process.env.NODE_ENV === "development") {
-      await wait(DEV_DELAY_MS);
-    }
+    await wait(TICKETMASTER_DELAY_MS);
   }
 
   sourceResults.push(
