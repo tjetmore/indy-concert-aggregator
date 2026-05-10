@@ -26,6 +26,7 @@ export const VENUE_IDS = {
   gainbridge: "KovZpZA6keIA",
   lucasoil: "KovZpZAdEJEA",
   fishers: "KovZ917AmVB",
+  victoryfield: "KovZpZAFdtAA",
   saltshedindoors: "KovZ917AI5F",
   saltshedoutdoors: "KovZ917Amf0",
   aragon: "KovZpZAFdJnA",
@@ -34,11 +35,18 @@ export const VENUE_IDS = {
   chicagotheatre: "KovZpZA6AJ6A",
   unitedcenter: "KovZpa2M7e",
   northerlyisland: "KovZpZAEA7IA",
+  soldierfield: "KovZpZAF6tIA",
+  wrigleyfield: "KovZpZAFlktA",
+  allstatearena: "KovZpa2MCe",
+  creditunionamphitheatre: "KovZpZAEktFA",
   kembalive: "KovZ917AIkj",
   newportmusic: "KovZpZAEAt6A",
   arcolumbus: "KovZpZAEAAIA",
   nationwidearena: "KovZpZA6kelA",
   schottenstein: "KovZpZA6A1EA",
+  ohiostadium: "KovZpZAEAAeA",
+  historiccrewstadium: "KovZpZAEe6AA",
+  lowercomfield: "Za5ju3rKuqZDejXBtn8QoaqFiUZf_HTVY7",
   ryman: "KovZpa61Ge",
   ascend: "KovZpZAEet7A",
   bridgestone: "KovZpZA6taAA",
@@ -48,7 +56,9 @@ export const VENUE_IDS = {
   bluebirdcafe: "rZ7HnEZ17fdZg",
   thirdandlindsley: "KovZpZA16IvA",
   pinnaclenashville: "KovZ917ARXe",
-  firstbankamphitheater: "KovZ917AJek"
+  firstbankamphitheater: "KovZ917AJek",
+  nissanstadium: "KovZpZA7AnJA",
+  geodispark: "KovZ917APYJ"
 } as const;
 
 export const VENUE_LABELS: Record<keyof typeof VENUE_IDS, string> = {
@@ -61,6 +71,7 @@ export const VENUE_LABELS: Record<keyof typeof VENUE_IDS, string> = {
   gainbridge: "Gainbridge Fieldhouse",
   lucasoil: "Lucas Oil Stadium",
   fishers: "Fishers Event Center",
+  victoryfield: "Victory Field",
   saltshedindoors: "The Salt Shed Indoors (Chicago)",
   saltshedoutdoors: "The Salt Shed Outdoors (Chicago)",
   aragon: "Aragon Ballroom (Chicago)",
@@ -69,11 +80,18 @@ export const VENUE_LABELS: Record<keyof typeof VENUE_IDS, string> = {
   chicagotheatre: "The Chicago Theatre (Chicago)",
   unitedcenter: "United Center (Chicago)",
   northerlyisland: "Huntington Bank Pavilion (Chicago)",
+  soldierfield: "Soldier Field (Chicago)",
+  wrigleyfield: "Wrigley Field (Chicago)",
+  allstatearena: "Allstate Arena (Chicago)",
+  creditunionamphitheatre: "Credit Union 1 Amphitheatre (Chicago Area)",
   kembalive: "KEMBA Live! (Columbus)",
   newportmusic: "Newport Music Hall (Columbus)",
   arcolumbus: "A&R Music Bar (Columbus)",
   nationwidearena: "Nationwide Arena (Columbus)",
   schottenstein: "Schottenstein Center (Columbus)",
+  ohiostadium: "Ohio Stadium (Columbus)",
+  historiccrewstadium: "Historic Crew Stadium (Columbus)",
+  lowercomfield: "Lower.com Field (Columbus)",
   ryman: "Ryman Auditorium (Nashville)",
   ascend: "Ascend Amphitheater (Nashville)",
   bridgestone: "Bridgestone Arena (Nashville)",
@@ -83,7 +101,9 @@ export const VENUE_LABELS: Record<keyof typeof VENUE_IDS, string> = {
   bluebirdcafe: "The Bluebird Cafe (Nashville)",
   thirdandlindsley: "3rd & Lindsley (Nashville)",
   pinnaclenashville: "The Pinnacle (Nashville)",
-  firstbankamphitheater: "FirstBank Amphitheater (Nashville Area)"
+  firstbankamphitheater: "FirstBank Amphitheater (Nashville Area)",
+  nissanstadium: "Nissan Stadium (Nashville)",
+  geodispark: "GEODIS Park (Nashville)"
 };
 
 export const VENUE_MARKETS: Record<keyof typeof VENUE_IDS, "indianapolis" | "chicago" | "columbus" | "nashville"> = {
@@ -96,6 +116,7 @@ export const VENUE_MARKETS: Record<keyof typeof VENUE_IDS, "indianapolis" | "chi
   gainbridge: "indianapolis",
   lucasoil: "indianapolis",
   fishers: "indianapolis",
+  victoryfield: "indianapolis",
   saltshedindoors: "chicago",
   saltshedoutdoors: "chicago",
   aragon: "chicago",
@@ -104,11 +125,18 @@ export const VENUE_MARKETS: Record<keyof typeof VENUE_IDS, "indianapolis" | "chi
   chicagotheatre: "chicago",
   unitedcenter: "chicago",
   northerlyisland: "chicago",
+  soldierfield: "chicago",
+  wrigleyfield: "chicago",
+  allstatearena: "chicago",
+  creditunionamphitheatre: "chicago",
   kembalive: "columbus",
   newportmusic: "columbus",
   arcolumbus: "columbus",
   nationwidearena: "columbus",
   schottenstein: "columbus",
+  ohiostadium: "columbus",
+  historiccrewstadium: "columbus",
+  lowercomfield: "columbus",
   ryman: "nashville",
   ascend: "nashville",
   bridgestone: "nashville",
@@ -118,7 +146,9 @@ export const VENUE_MARKETS: Record<keyof typeof VENUE_IDS, "indianapolis" | "chi
   bluebirdcafe: "nashville",
   thirdandlindsley: "nashville",
   pinnaclenashville: "nashville",
-  firstbankamphitheater: "nashville"
+  firstbankamphitheater: "nashville",
+  nissanstadium: "nashville",
+  geodispark: "nashville"
 };
 
 
