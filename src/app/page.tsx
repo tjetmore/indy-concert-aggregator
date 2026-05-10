@@ -64,7 +64,7 @@ export default async function HomePage() {
                 Indiana Live Calendar
               </p>
               <h1 className="mt-3 text-3xl font-semibold tracking-normal text-slate-50 md:text-5xl">
-                Upcoming concerts in Indy, Chicago, and Columbus
+                Upcoming concerts in Indy, Chicago, Columbus, and Nashville
               </h1>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300 md:text-base">
                 Browse upcoming shows from local venue calendars, filter by

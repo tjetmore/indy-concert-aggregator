@@ -38,7 +38,17 @@ export const VENUE_IDS = {
   newportmusic: "KovZpZAEAt6A",
   arcolumbus: "KovZpZAEAAIA",
   nationwidearena: "KovZpZA6kelA",
-  schottenstein: "KovZpZA6A1EA"
+  schottenstein: "KovZpZA6A1EA",
+  ryman: "KovZpa61Ge",
+  ascend: "KovZpZAEet7A",
+  bridgestone: "KovZpZA6taAA",
+  brooklynbowlnashville: "KovZ917APep",
+  basementeast: "KovZ917ACl7",
+  marathonmusicworks: "KovZpZAJnJlA",
+  bluebirdcafe: "rZ7HnEZ17fdZg",
+  thirdandlindsley: "KovZpZA16IvA",
+  pinnaclenashville: "KovZ917ARXe",
+  firstbankamphitheater: "KovZ917AJek"
 } as const;
 
 export const VENUE_LABELS: Record<keyof typeof VENUE_IDS, string> = {
@@ -63,10 +73,20 @@ export const VENUE_LABELS: Record<keyof typeof VENUE_IDS, string> = {
   newportmusic: "Newport Music Hall (Columbus)",
   arcolumbus: "A&R Music Bar (Columbus)",
   nationwidearena: "Nationwide Arena (Columbus)",
-  schottenstein: "Schottenstein Center (Columbus)"
+  schottenstein: "Schottenstein Center (Columbus)",
+  ryman: "Ryman Auditorium (Nashville)",
+  ascend: "Ascend Amphitheater (Nashville)",
+  bridgestone: "Bridgestone Arena (Nashville)",
+  brooklynbowlnashville: "Brooklyn Bowl (Nashville)",
+  basementeast: "The Basement East (Nashville)",
+  marathonmusicworks: "Marathon Music Works (Nashville)",
+  bluebirdcafe: "The Bluebird Cafe (Nashville)",
+  thirdandlindsley: "3rd & Lindsley (Nashville)",
+  pinnaclenashville: "The Pinnacle (Nashville)",
+  firstbankamphitheater: "FirstBank Amphitheater (Nashville Area)"
 };
 
-export const VENUE_MARKETS: Record<keyof typeof VENUE_IDS, "indianapolis" | "chicago" | "columbus"> = {
+export const VENUE_MARKETS: Record<keyof typeof VENUE_IDS, "indianapolis" | "chicago" | "columbus" | "nashville"> = {
   ruoff: "indianapolis",
   everwise: "indianapolis",
   oldnational: "indianapolis",
@@ -88,7 +108,17 @@ export const VENUE_MARKETS: Record<keyof typeof VENUE_IDS, "indianapolis" | "chi
   newportmusic: "columbus",
   arcolumbus: "columbus",
   nationwidearena: "columbus",
-  schottenstein: "columbus"
+  schottenstein: "columbus",
+  ryman: "nashville",
+  ascend: "nashville",
+  bridgestone: "nashville",
+  brooklynbowlnashville: "nashville",
+  basementeast: "nashville",
+  marathonmusicworks: "nashville",
+  bluebirdcafe: "nashville",
+  thirdandlindsley: "nashville",
+  pinnaclenashville: "nashville",
+  firstbankamphitheater: "nashville"
 };
 
 
