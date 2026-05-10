@@ -66,6 +66,31 @@ export const VENUE_LABELS: Record<keyof typeof VENUE_IDS, string> = {
   schottenstein: "Schottenstein Center (Columbus)"
 };
 
+export const VENUE_MARKETS: Record<keyof typeof VENUE_IDS, "indianapolis" | "chicago" | "columbus"> = {
+  ruoff: "indianapolis",
+  everwise: "indianapolis",
+  oldnational: "indianapolis",
+  vogue: "indianapolis",
+  hifi: "indianapolis",
+  rocktheruins: "indianapolis",
+  gainbridge: "indianapolis",
+  lucasoil: "indianapolis",
+  fishers: "indianapolis",
+  saltshedindoors: "chicago",
+  saltshedoutdoors: "chicago",
+  aragon: "chicago",
+  riviera: "chicago",
+  vic: "chicago",
+  chicagotheatre: "chicago",
+  unitedcenter: "chicago",
+  northerlyisland: "chicago",
+  kembalive: "columbus",
+  newportmusic: "columbus",
+  arcolumbus: "columbus",
+  nationwidearena: "columbus",
+  schottenstein: "columbus"
+};
+
 
 const TICKETMASTER_BASE_URL = "https://app.ticketmaster.com/discovery/v2";
 const REVALIDATE_SECONDS = 3600;

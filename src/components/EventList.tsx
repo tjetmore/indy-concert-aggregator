@@ -22,7 +22,8 @@ function formatTime(localDate: string, localTime?: string) {
   }).format(date);
 }
 
-type VenueOption = { key: string; label: string };
+type MarketFilter = "all" | "indianapolis" | "chicago" | "columbus";
+type VenueOption = { key: string; label: string; market: Exclude<MarketFilter, "all"> };
 type DateRangeFilter = "all" | "weekend" | "30days";
 type ViewMode = "all" | "saved" | "dismissed";
 type GroupMode = "date" | "venue";
@@ -144,6 +145,7 @@ export default function EventList({
   venues: VenueOption[];
 }) {
   const [filter, setFilter] = useState("All");
+  const [marketFilter, setMarketFilter] = useState<MarketFilter>("all");
   const [query, setQuery] = useState("");
   const [collapsedByMonth, setCollapsedByMonth] = useState<Record<string, boolean>>({});
   const [onlyNewThisWeek, setOnlyNewThisWeek] = useState(false);
@@ -316,8 +318,11 @@ export default function EventList({
 
   const filtered = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
+    const marketByVenue = new Map(venues.map((venue) => [venue.key, venue.market]));
 
     return events.filter((event) => {
+      const matchesMarket =
+        marketFilter === "all" || marketByVenue.get(event.venueKey) === marketFilter;
       const matchesFilter = filter === "All" || event.venueKey === filter;
       const activeSavedIds = sharedEventIds.length ? sharedEventIds : savedEventIds;
       const isDismissed = dismissedEventIds.includes(event.id);
@@ -341,10 +346,12 @@ export default function EventList({
         return false;
       }
 
-      return matchesFilter && matchesView && matchesQuery && matchesDate;
+      return matchesMarket && matchesFilter && matchesView && matchesQuery && matchesDate;
     });
   }, [
     events,
+    venues,
+    marketFilter,
     filter,
     query,
     onlyNewThisWeek,
@@ -372,9 +379,23 @@ export default function EventList({
     [events, previousVisitAt]
   );
   const filterOptions = useMemo(
-    () => [{ key: "All", label: "All" }, ...venues],
-    [venues]
+    () => [
+      { key: "All", label: "All", market: "indianapolis" as const },
+      ...venues.filter((venue) => marketFilter === "all" || venue.market === marketFilter)
+    ],
+    [marketFilter, venues]
   );
+
+  function updateMarketFilter(nextMarket: MarketFilter) {
+    setMarketFilter(nextMarket);
+    if (
+      filter !== "All" &&
+      nextMarket !== "all" &&
+      venues.find((venue) => venue.key === filter)?.market !== nextMarket
+    ) {
+      setFilter("All");
+    }
+  }
 
   const toggleMonth = (key: string) => {
     setCollapsedByMonth((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -469,6 +490,42 @@ export default function EventList({
       ) : null}
 
       <div className="rounded-lg border border-slate-800 bg-slate-950/45 p-4 shadow-2xl shadow-black/20">
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <span className="text-sm font-medium text-slate-400">City</span>
+          <button
+            type="button"
+            className="filter-pill"
+            data-active={marketFilter === "all"}
+            onClick={() => updateMarketFilter("all")}
+          >
+            All cities
+          </button>
+          <button
+            type="button"
+            className="filter-pill"
+            data-active={marketFilter === "indianapolis"}
+            onClick={() => updateMarketFilter("indianapolis")}
+          >
+            Indianapolis
+          </button>
+          <button
+            type="button"
+            className="filter-pill"
+            data-active={marketFilter === "chicago"}
+            onClick={() => updateMarketFilter("chicago")}
+          >
+            Chicago
+          </button>
+          <button
+            type="button"
+            className="filter-pill"
+            data-active={marketFilter === "columbus"}
+            onClick={() => updateMarketFilter("columbus")}
+          >
+            Columbus
+          </button>
+        </div>
+
         <div className="grid gap-4 lg:grid-cols-[1fr_1.5fr_auto_auto] lg:items-end">
           <div>
             <label className="control-label">
@@ -575,6 +632,7 @@ export default function EventList({
       <div className="flex items-center justify-between text-sm text-slate-400">
         <span>{filtered.length} of {events.length} events shown</span>
         {query ||
+        marketFilter !== "all" ||
         filter !== "All" ||
         onlyNewThisWeek ||
         onlyNewSinceLastVisit ||
@@ -584,6 +642,7 @@ export default function EventList({
             type="button"
             className="font-semibold text-amber-300 transition hover:text-amber-200"
             onClick={() => {
+              setMarketFilter("all");
               setFilter("All");
               setQuery("");
               setOnlyNewThisWeek(false);

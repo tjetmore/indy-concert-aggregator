@@ -1,5 +1,5 @@
 import EventList from "@/components/EventList";
-import { VENUE_LABELS } from "@/lib/ticketmaster";
+import { VENUE_LABELS, VENUE_MARKETS } from "@/lib/ticketmaster";
 import {
   getConcertData,
   getHasMissingVenueId,
@@ -47,7 +47,8 @@ export default async function HomePage() {
   const { events, sourceHealth } = await getConcertData();
   const venues = venueEntries.map(([venueKey]) => ({
     key: venueKey,
-    label: VENUE_LABELS[venueKey as keyof typeof VENUE_LABELS] ?? venueKey
+    label: VENUE_LABELS[venueKey as keyof typeof VENUE_LABELS] ?? venueKey,
+    market: VENUE_MARKETS[venueKey as keyof typeof VENUE_MARKETS] ?? "indianapolis"
   }));
   const sourceCount = sourceHealth.length;
   const failedSources = sourceHealth.filter((source) => source.status === "failed");
@@ -63,7 +64,7 @@ export default async function HomePage() {
                 Indiana Live Calendar
               </p>
               <h1 className="mt-3 text-3xl font-semibold tracking-normal text-slate-50 md:text-5xl">
-                Upcoming Indianapolis concerts in one list
+                Upcoming concerts in Indy, Chicago, and Columbus
               </h1>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300 md:text-base">
                 Browse upcoming shows from local venue calendars, filter by
