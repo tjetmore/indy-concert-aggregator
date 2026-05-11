@@ -22,7 +22,7 @@ function formatTime(localDate: string, localTime?: string) {
   }).format(date);
 }
 
-type MarketFilter = "all" | "indianapolis" | "chicago" | "columbus" | "nashville";
+type MarketFilter = "all" | "indianapolis" | "chicago" | "columbus" | "nashville" | "louisville";
 type VenueOption = { key: string; label: string; market: Exclude<MarketFilter, "all"> };
 type DateRangeFilter = "all" | "weekend" | "30days";
 type ViewMode = "all" | "saved" | "dismissed";
@@ -531,6 +531,14 @@ export default function EventList({
             onClick={() => updateMarketFilter("nashville")}
           >
             Nashville
+          </button>
+          <button
+            type="button"
+            className="filter-pill"
+            data-active={marketFilter === "louisville"}
+            onClick={() => updateMarketFilter("louisville")}
+          >
+            Louisville
           </button>
         </div>
 

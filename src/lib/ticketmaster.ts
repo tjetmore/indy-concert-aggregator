@@ -58,7 +58,16 @@ export const VENUE_IDS = {
   pinnaclenashville: "KovZ917ARXe",
   firstbankamphitheater: "KovZ917AJek",
   nissanstadium: "KovZpZA7AnJA",
-  geodispark: "KovZ917APYJ"
+  geodispark: "KovZ917APYJ",
+  kfcyumcenter: "KovZpaFnje",
+  louisvillepalace: "KovZpZAEk6tA",
+  mercuryballroom: "KovZpZAEk7EA",
+  iroquoisamphitheater: "KovZpZAaIFkA",
+  paristownhall: "KovZ917A-xJ",
+  headlinerslouisville: "KovZpZAaIn7A",
+  waterfrontpark: "KovZpZA16enA",
+  greatlawnwaterfront: "KovZpZAdledA",
+  louisvillesluggerfield: "KovZpZAFkeIA"
 } as const;
 
 export const VENUE_LABELS: Record<keyof typeof VENUE_IDS, string> = {
@@ -103,10 +112,19 @@ export const VENUE_LABELS: Record<keyof typeof VENUE_IDS, string> = {
   pinnaclenashville: "The Pinnacle (Nashville)",
   firstbankamphitheater: "FirstBank Amphitheater (Nashville Area)",
   nissanstadium: "Nissan Stadium (Nashville)",
-  geodispark: "GEODIS Park (Nashville)"
+  geodispark: "GEODIS Park (Nashville)",
+  kfcyumcenter: "KFC Yum! Center (Louisville)",
+  louisvillepalace: "The Louisville Palace",
+  mercuryballroom: "Mercury Ballroom (Louisville)",
+  iroquoisamphitheater: "Iroquois Amphitheater (Louisville)",
+  paristownhall: "Old Forester's Paristown Hall (Louisville)",
+  headlinerslouisville: "Headliners Music Hall (Louisville)",
+  waterfrontpark: "Waterfront Park (Louisville)",
+  greatlawnwaterfront: "Great Lawn at Waterfront Park (Louisville)",
+  louisvillesluggerfield: "Louisville Slugger Field"
 };
 
-export const VENUE_MARKETS: Record<keyof typeof VENUE_IDS, "indianapolis" | "chicago" | "columbus" | "nashville"> = {
+export const VENUE_MARKETS: Record<keyof typeof VENUE_IDS, "indianapolis" | "chicago" | "columbus" | "nashville" | "louisville"> = {
   ruoff: "indianapolis",
   everwise: "indianapolis",
   oldnational: "indianapolis",
@@ -148,7 +166,16 @@ export const VENUE_MARKETS: Record<keyof typeof VENUE_IDS, "indianapolis" | "chi
   pinnaclenashville: "nashville",
   firstbankamphitheater: "nashville",
   nissanstadium: "nashville",
-  geodispark: "nashville"
+  geodispark: "nashville",
+  kfcyumcenter: "louisville",
+  louisvillepalace: "louisville",
+  mercuryballroom: "louisville",
+  iroquoisamphitheater: "louisville",
+  paristownhall: "louisville",
+  headlinerslouisville: "louisville",
+  waterfrontpark: "louisville",
+  greatlawnwaterfront: "louisville",
+  louisvillesluggerfield: "louisville"
 };
 
 
