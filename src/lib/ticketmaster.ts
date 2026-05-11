@@ -67,7 +67,17 @@ export const VENUE_IDS = {
   headlinerslouisville: "KovZpZAaIn7A",
   waterfrontpark: "KovZpZA16enA",
   greatlawnwaterfront: "KovZpZAdledA",
-  louisvillesluggerfield: "KovZpZAFkeIA"
+  louisvillesluggerfield: "KovZpZAFkeIA",
+  riverbend: "KovZpZA6tdaA",
+  heritagebankcenter: "KovZpZA6tdJA",
+  bogarts: "KovZpZAEk6IA",
+  tafttheatre: "KovZpa39ie",
+  bradymusiccenter: "KovZ917APg3",
+  pncpavilioncincinnati: "KovZpaK7xe",
+  greatamericanballpark: "KovZpZA6tdIA",
+  nippertstadium: "KovZpZA1J6lA",
+  tqlstadium: "KovZ917AJUY",
+  madisontheater: "KovZpZAa1anA"
 } as const;
 
 export const VENUE_LABELS: Record<keyof typeof VENUE_IDS, string> = {
@@ -121,10 +131,20 @@ export const VENUE_LABELS: Record<keyof typeof VENUE_IDS, string> = {
   headlinerslouisville: "Headliners Music Hall (Louisville)",
   waterfrontpark: "Waterfront Park (Louisville)",
   greatlawnwaterfront: "Great Lawn at Waterfront Park (Louisville)",
-  louisvillesluggerfield: "Louisville Slugger Field"
+  louisvillesluggerfield: "Louisville Slugger Field",
+  riverbend: "Riverbend Music Center (Cincinnati)",
+  heritagebankcenter: "Heritage Bank Center (Cincinnati)",
+  bogarts: "Bogart's (Cincinnati)",
+  tafttheatre: "Taft Theatre (Cincinnati)",
+  bradymusiccenter: "The Andrew J Brady Music Center (Cincinnati)",
+  pncpavilioncincinnati: "PNC Pavilion (Cincinnati)",
+  greatamericanballpark: "Great American Ball Park (Cincinnati)",
+  nippertstadium: "Nippert Stadium (Cincinnati)",
+  tqlstadium: "TQL Stadium (Cincinnati)",
+  madisontheater: "Madison Theater (Cincinnati Area)"
 };
 
-export const VENUE_MARKETS: Record<keyof typeof VENUE_IDS, "indianapolis" | "chicago" | "columbus" | "nashville" | "louisville"> = {
+export const VENUE_MARKETS: Record<keyof typeof VENUE_IDS, "indianapolis" | "chicago" | "columbus" | "nashville" | "louisville" | "cincinnati"> = {
   ruoff: "indianapolis",
   everwise: "indianapolis",
   oldnational: "indianapolis",
@@ -175,7 +195,17 @@ export const VENUE_MARKETS: Record<keyof typeof VENUE_IDS, "indianapolis" | "chi
   headlinerslouisville: "louisville",
   waterfrontpark: "louisville",
   greatlawnwaterfront: "louisville",
-  louisvillesluggerfield: "louisville"
+  louisvillesluggerfield: "louisville",
+  riverbend: "cincinnati",
+  heritagebankcenter: "cincinnati",
+  bogarts: "cincinnati",
+  tafttheatre: "cincinnati",
+  bradymusiccenter: "cincinnati",
+  pncpavilioncincinnati: "cincinnati",
+  greatamericanballpark: "cincinnati",
+  nippertstadium: "cincinnati",
+  tqlstadium: "cincinnati",
+  madisontheater: "cincinnati"
 };
 
 
