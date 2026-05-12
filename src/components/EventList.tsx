@@ -152,7 +152,7 @@ export default function EventList({
   venues: VenueOption[];
 }) {
   const [filter, setFilter] = useState("All");
-  const [marketFilter, setMarketFilter] = useState<MarketFilter>("all");
+  const [marketFilter, setMarketFilter] = useState<MarketFilter>("indianapolis");
   const [query, setQuery] = useState("");
   const [collapsedByMonth, setCollapsedByMonth] = useState<Record<string, boolean>>({});
   const [onlyNewThisWeek, setOnlyNewThisWeek] = useState(false);
