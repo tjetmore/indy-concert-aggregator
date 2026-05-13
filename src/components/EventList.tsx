@@ -31,7 +31,7 @@ type MarketFilter =
   | "louisville"
   | "cincinnati";
 type VenueOption = { key: string; label: string; market: Exclude<MarketFilter, "all"> };
-type DateRangeFilter = "all" | "weekend" | "30days";
+type DateRangeFilter = "all" | "weekend" | "30days" | "specific";
 type ViewMode = "all" | "saved" | "dismissed";
 type GroupMode = "date" | "venue";
 type EventGroup = { key: string; label: string; events: EventItem[] };
@@ -111,8 +111,12 @@ function getWeekendRange(now = new Date()) {
   return { start, end };
 }
 
-function matchesDateRange(event: EventItem, filter: DateRangeFilter) {
+function matchesDateRange(event: EventItem, filter: DateRangeFilter, specificDate: string) {
   if (filter === "all") return true;
+
+  if (filter === "specific") {
+    return Boolean(specificDate) && event.localDate === specificDate;
+  }
 
   const eventDate = getEventDateTime(event);
   const now = new Date();
@@ -158,6 +162,7 @@ export default function EventList({
   const [onlyNewThisWeek, setOnlyNewThisWeek] = useState(false);
   const [onlyNewSinceLastVisit, setOnlyNewSinceLastVisit] = useState(false);
   const [dateRange, setDateRange] = useState<DateRangeFilter>("all");
+  const [specificDate, setSpecificDate] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("all");
   const [groupMode, setGroupMode] = useState<GroupMode>("date");
   const [savedEventIds, setSavedEventIds] = useState<string[]>([]);
@@ -341,7 +346,7 @@ export default function EventList({
       const matchesQuery = normalizedQuery.length
         ? event.name.toLowerCase().includes(normalizedQuery)
         : true;
-      const matchesDate = matchesDateRange(event, dateRange);
+      const matchesDate = matchesDateRange(event, dateRange, specificDate);
 
       if (onlyNewThisWeek) {
         const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
@@ -365,6 +370,7 @@ export default function EventList({
     onlyNewSinceLastVisit,
     previousVisitAt,
     dateRange,
+    specificDate,
     viewMode,
     savedEventIds,
     dismissedEventIds,
@@ -592,7 +598,10 @@ export default function EventList({
               type="button"
               className="filter-pill"
               data-active={dateRange === "all"}
-              onClick={() => setDateRange("all")}
+              onClick={() => {
+                setDateRange("all");
+                setSpecificDate("");
+              }}
             >
               All dates
             </button>
@@ -600,7 +609,10 @@ export default function EventList({
               type="button"
               className="filter-pill"
               data-active={dateRange === "weekend"}
-              onClick={() => setDateRange("weekend")}
+              onClick={() => {
+                setDateRange("weekend");
+                setSpecificDate("");
+              }}
             >
               This weekend
             </button>
@@ -608,10 +620,23 @@ export default function EventList({
               type="button"
               className="filter-pill"
               data-active={dateRange === "30days"}
-              onClick={() => setDateRange("30days")}
+              onClick={() => {
+                setDateRange("30days");
+                setSpecificDate("");
+              }}
             >
               Next 30 days
             </button>
+            <input
+              type="date"
+              className="control-field h-[2.35rem] w-auto min-w-[9.75rem] rounded-full px-3 py-1 text-sm"
+              value={specificDate}
+              onChange={(event) => {
+                setSpecificDate(event.target.value);
+                setDateRange(event.target.value ? "specific" : "all");
+              }}
+              aria-label="Specific date"
+            />
           </div>
 
           <label className="flex min-h-[2.35rem] items-center gap-2 rounded-full border border-slate-800 bg-slate-900/60 px-3 text-sm font-medium text-slate-300">
@@ -679,6 +704,7 @@ export default function EventList({
               setOnlyNewThisWeek(false);
               setOnlyNewSinceLastVisit(false);
               setDateRange("all");
+              setSpecificDate("");
               setViewMode("all");
             }}
           >
